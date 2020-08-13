@@ -11,6 +11,14 @@ let budgetController = (function () {
     this.value = value;
   };
 
+  // create a private function to calculate the total income/expenses
+  var calculateTotal = function(type) {
+    var sum = 0;
+    data.allItems[type].forEach(function(cur) {
+      sum += cur.value;
+    });
+    data.totals[type] = sum;
+  };
   // create a data structure of an object that stores all the data into arrays
   var data = {
     allItems: {
@@ -20,11 +28,14 @@ let budgetController = (function () {
     totals: {
       exp: 0,
       inc: 0
-    }
+    },
+    budget: 0,
+    percentage: -1
   };
 
   // return a public method
   return {
+    // create a public method that creates the income/expenses objects based on applying the input data to the object prototype and push the objects to the data object
     addItem: function(type, des, val) {
       var newItem, ID;
 
@@ -48,7 +59,30 @@ let budgetController = (function () {
       // return the newItem that other module have access to it
       return newItem;
     },
+    // public method using the private function to calculate and return the total income/expenses and percentage
+    calculateBudget: function() {
+      // calculate total income and expenses
+      calculateTotal('exp');
+      calculateTotal('inc');
+      // calculate the budget: income - expenses
+      data.budget = data.totals.inc - data.totals.exp;
+      // calculate the percentage of income that we spent
+      if (data.totals.inc > 0) {
+        data.percentage = Math.round((data.totals.exp / data.totals.inc) * 100);
+      } else {
+        data.percentage = -1;
+      };
 
+    },
+    // public method to store the budget that we calculated
+    getBudget: function() {
+      return {
+        budget: data.budget,
+        totalInc: data.totals.inc,
+        totalExp: data.totals.exp,
+        percentage: data.percentage
+      };
+    },
     testing: function () {
       console.log(data);
     }
@@ -67,7 +101,11 @@ let UIController = (function() {
     inputValue: '.add__value',
     inputBtn: '.add__btn',
     incomeContainer: '.income__list', // select div id for html to append to
-    expensesContainer: '.expenses__list'
+    expensesContainer: '.expenses__list',
+    budgetLabel: '.budget__value',
+    incomeLabel: '.budget__income--value',
+    expenseLabel: '.budget__expenses--value',
+    percentageLabel: '.budget__expenses--percentage'
   };
 
   // returns an object containing:
@@ -110,11 +148,26 @@ let UIController = (function() {
 
       // using higher order function to clear all the fields that selected by turning into empty string
       fieldsArr.forEach(function(current, index, array) {
-        current.value = ""; // .value is the value property of the input field
+        current.value = ""; // .value is the value property of expense/income obj stored in data obj in budgetcontroller
       });
 
       // sets the focus back to the description input field
       fields[0].focus();
+    },
+    // public method to do DOM manipulation to update the budget results in html file
+    displayBudget: function(obj) {
+      // data received from budgetController.getBudget()
+      document.querySelector(DOMstrings.budgetLabel).textContent = obj.budget;
+      document.querySelector(DOMstrings.incomeLabel).textContent = obj.totalInc;
+      document.querySelector(DOMstrings.expenseLabel).textContent = obj.totalExp;
+
+      if(obj.percentage > 0) {
+        document.querySelector(DOMstrings.percentageLabel).textContent = obj.percentage + '%';
+      } else {
+        document.querySelector(DOMstrings.percentageLabel).textContent = '---';
+      }
+
+
     },
 
     // a function that contains DOMstrings that let outter function to have the access of DOMstrings
@@ -146,11 +199,13 @@ let controller = (function(budgetCtrl, UICtrl) {
 
   var updateBudget = function () {
 
-    // 1. Calculate the budget
+    // 1. Calculate the total income and expenses
+    budgetCtrl.calculateBudget();
 
     // 2. Return the budget
-
+    var budget = budgetCtrl.getBudget();
     // 3. Display the budget on the UI
+    UICtrl.displayBudget(budget);
 
   }
 
@@ -180,6 +235,12 @@ let controller = (function(budgetCtrl, UICtrl) {
   return {
     init: function() {
       console.log('application is running');
+      UICtrl.displayBudget({
+        budget: 0,
+        totalInc: 0,
+        totalExp: 0,
+        percentage: -1
+      });
       setupEventlisteners();
     }
   };
