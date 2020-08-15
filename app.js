@@ -170,10 +170,10 @@ let UIController = (function() {
     int = numSplit[0];
     let addComma = function(str) {
       var arr = str.split('');
-      for (let i = arr.length; i > 0; i -= 3) {
+      for (let i = arr.length - 3; i > 0; i -= 3) {
         arr.splice(i, 0, ',');
       }
-      return arr.join('').substring(0, arr.length-1);
+      return arr.join('').substring(0, arr.length);
     }
     commaInt = addComma(int);
     dec = numSplit[1];
