@@ -173,7 +173,7 @@ let UIController = (function() {
       for (let i = arr.length - 3; i > 0; i -= 3) {
         arr.splice(i, 0, ',');
       }
-      return arr.join('').substring(0, arr.length);
+      return arr.join('');
     }
     commaInt = addComma(int);
     dec = numSplit[1];
