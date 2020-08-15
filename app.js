@@ -4,12 +4,28 @@ let budgetController = (function () {
     this.id = id;
     this.description = description;
     this.value = value;
+    this.percentage = -1;
   };
   var Income = function (id, description, value) {
     this.id = id;
     this.description = description;
     this.value = value;
   };
+
+  // add prototype property to calculate percentage
+  Expense.prototype.calcPercentage = function(totalIncome) {
+    if (totalIncome > 0) {
+      this.percentage = Math.round((this.value / totalIncome) * 100);
+    } else {
+      this.percentage = -1;
+    }
+
+  };
+
+  // add prototype property to get the percentage data
+  Expense.prototype.getPercentage = function() {
+    return this.percentage;
+  }
 
   // create a private function to calculate the total income/expenses
   var calculateTotal = function(type) {
@@ -89,6 +105,19 @@ let budgetController = (function () {
       };
 
     },
+    // public method to calculate the expense percentage
+    calculatePercentages: function() {
+      data.allItems.exp.forEach(function(cur) {
+        cur.calcPercentage(data.totals.inc);
+      });
+    },
+    // public method to get the percentage
+    getPercentages: function() {
+      var allPerc = data.allItems.exp.map(function(cur) {
+        return cur.getPercentage();
+      });
+      return allPerc;
+    },
     // public method to store the budget that we calculated
     getBudget: function() {
       return {
@@ -121,7 +150,42 @@ let UIController = (function() {
     incomeLabel: '.budget__income--value',
     expenseLabel: '.budget__expenses--value',
     percentageLabel: '.budget__expenses--percentage',
-    container: ".container"
+    container: ".container",
+    expensesPercLabel: ".item__percentage",
+    dateLabel: '.budget__title--month'
+  };
+  // a function to formatting the numbers
+  var formatNumber = function(num, type) {
+    var numSplit, int, dec, commaInt;
+    /*
+    + or - sign before number
+    exactly 2 decimal points
+    comma separating the thousands
+    */
+    num = Math.abs(num);
+    // put 2 decimal numbers after the num
+    num = num.toFixed(2);
+    // split num into int part and decimal part
+    numSplit = num.split('.');
+    int = numSplit[0];
+    let addComma = function(str) {
+      var arr = str.split('');
+      for (let i = arr.length; i > 0; i -= 3) {
+        arr.splice(i, 0, ',');
+      }
+      return arr.join('').substring(0, arr.length-1);
+    }
+    commaInt = addComma(int);
+    dec = numSplit[1];
+
+    return (type === 'exp'? '-' : '+') + ' ' + commaInt + '.' + dec;
+  };
+
+  // field return a node list not an array so dont have higher order functions, so have create a primitive function "forEach" for the node list.
+  var nodeListForEach = function(list, callback) {
+    for (let i = 0; i < list.length; i++) {
+      callback(list[i], i);
+    }
   };
 
   // returns an object containing:
@@ -149,7 +213,7 @@ let UIController = (function() {
       // replace the placeholder text with some actual data
       newHtml = html.replace('%id%', obj.id);
       newHtml = newHtml.replace('%description%', obj.description);
-      newHtml = newHtml.replace('%value%', obj.value);
+      newHtml = newHtml.replace('%value%', formatNumber(obj.value, type));
 
       // insert the HTML to the DOM
       document.querySelector(element).insertAdjacentHTML('beforeend', newHtml);
@@ -180,18 +244,54 @@ let UIController = (function() {
     },
     // public method to do DOM manipulation to update the budget results in html file
     displayBudget: function(obj) {
+      var type;
+      obj.budget > 0? type = 'inc' : type = 'exp';
       // data received from budgetController.getBudget()
-      document.querySelector(DOMstrings.budgetLabel).textContent = obj.budget;
-      document.querySelector(DOMstrings.incomeLabel).textContent = obj.totalInc;
-      document.querySelector(DOMstrings.expenseLabel).textContent = obj.totalExp;
+      document.querySelector(DOMstrings.budgetLabel).textContent = formatNumber(obj.budget, type);
+      document.querySelector(DOMstrings.incomeLabel).textContent = formatNumber(obj.totalInc, 'inc');
+      document.querySelector(DOMstrings.expenseLabel).textContent = formatNumber(obj.totalExp, 'exp');
 
       if(obj.percentage > 0) {
         document.querySelector(DOMstrings.percentageLabel).textContent = obj.percentage + '%';
       } else {
         document.querySelector(DOMstrings.percentageLabel).textContent = '---';
       }
+    },
+    // public method to display the expense percentages in the UI
+    displayPercentages: function(percentages) {
+      var field = document.querySelectorAll(DOMstrings.expensesPercLabel);
 
+      nodeListForEach(field, function(current, index) {
+        if (percentages[index] > 0) {
+          current.textContent = percentages[index] + '%';
+        } else {
+          current.textContent = '---';
+        }
 
+      });
+    },
+    // public method to display the date in the top of the UI will call this function in init
+    displayDate: function() {
+      var now, year, month, months;
+      now = new Date();
+      year = now.getFullYear();
+      months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      month = now.getMonth();
+      document.querySelector(DOMstrings.dateLabel).textContent = months[month] + ' ' + year;
+
+    },
+
+    changedType: function() {
+      var fields = document.querySelectorAll(
+        DOMstrings.inputType + ',' +
+        DOMstrings.inputDescription + ',' +
+        DOMstrings.inputValue);
+      // using the forEach function created for class lists to toggle(add when without the class remove once have the class) the css class
+      nodeListForEach(fields, function(cur) {
+        cur.classList.toggle('red-focus');
+      });
+
+      document.querySelector(DOMstrings.inputBtn).classList.toggle('red');
     },
 
     // a function that contains DOMstrings that let outter function to have the access of DOMstrings
@@ -220,9 +320,10 @@ let controller = (function(budgetCtrl, UICtrl) {
       }
     });
 
-    // add eventhandler on the parent of all income/expenses to do event delegation to find the item id
+    // add eventlistener on the parent of all income/expenses to do event delegation to find the item id
     document.querySelector(DOM.container).addEventListener('click', ctrlDeleteItem);
-
+    // add eventlisterner 'change': once the input type changes will call a function which will change the color of the input fields and button
+    document.querySelector(DOM.inputType).addEventListener('change', UICtrl.changedType);
   };
 
   // create a function to update the new current budget once add/delete an item
@@ -240,11 +341,11 @@ let controller = (function(budgetCtrl, UICtrl) {
 
   var updatePercentages = function() {
     // 1. calculate the percentages
-
+    budgetCtrl.calculatePercentages();
     // 2. get percentage from the budget controller
-
+    var percentages = budgetCtrl.getPercentages();
     // 3. update the UI with the new percentages
-
+    UICtrl.displayPercentages(percentages);
   };
   // collecting the input data from UICtrl(UIController)
   var ctrlAddItem = function () {
@@ -307,6 +408,7 @@ let controller = (function(budgetCtrl, UICtrl) {
         percentage: -1
       });
       setupEventlisteners();
+      UICtrl.displayDate();
     }
   };
 
