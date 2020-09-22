@@ -127,7 +127,15 @@ let budgetController = (function () {
         percentage: data.percentage
       };
     },
-    testing: function () {
+
+    getData: function() {
+      return {
+        expense: data.allItems.exp,
+        income: data.allItems.inc
+      }
+    },
+
+    exportData: function () {
       console.log(data);
     }
   }
@@ -152,7 +160,8 @@ let UIController = (function() {
     percentageLabel: '.budget__expenses--percentage',
     container: ".container",
     expensesPercLabel: ".item__percentage",
-    dateLabel: '.budget__title--month'
+    dateLabel: '.budget__title--month',
+    exCsvBtn: '.add__excsv'
   };
   // a function to formatting the numbers
   var formatNumber = function(num, type) {
@@ -294,6 +303,28 @@ let UIController = (function() {
       document.querySelector(DOMstrings.inputBtn).classList.toggle('red');
     },
 
+    // a function that changes exCsvBtn style
+    ExCsvBtnStyleAdd: function() {
+      let exCsvbtn = document.querySelector(DOMstrings.exCsvBtn);
+      exCsvbtn.style.color="#28B9B5";
+      exCsvbtn.style.border="1px solid #28B9B5";
+      exCsvbtn.style.cursor="pointer";
+      exCsvbtn.addEventListener('mousedown', function() {
+        exCsvbtn.style.transform="translateY(1px)";
+      });
+      exCsvbtn.addEventListener('mouseup', function() {
+        exCsvbtn.style.transform="translateY(-1px)";
+      });
+      document.querySelector(DOMstrings.exCsvBtn).addEventListener('click', budgetController.exportData);
+    },
+    // a function that disables the click event of exCsvBtn while there is no data in the field
+    ExCsvBtnStyleReM: function() {
+      let exCsvbtn = document.querySelector(DOMstrings.exCsvBtn);
+      exCsvbtn.style.color="rgb(190, 190, 190)";
+      exCsvbtn.style.border="1px solid rgb(190, 190, 190)";
+      exCsvbtn.style.cursor="default";
+      exCsvbtn.style.pointerEvents = 'none';
+    },
     // a function that contains DOMstrings that let outter function to have the access of DOMstrings
     getDOMstrings: function () {
       return DOMstrings;
@@ -324,6 +355,7 @@ let controller = (function(budgetCtrl, UICtrl) {
     document.querySelector(DOM.container).addEventListener('click', ctrlDeleteItem);
     // add eventlisterner 'change': once the input type changes will call a function which will change the color of the input fields and button
     document.querySelector(DOM.inputType).addEventListener('change', UICtrl.changedType);
+
   };
 
   // create a function to update the new current budget once add/delete an item
@@ -369,7 +401,14 @@ let controller = (function(budgetCtrl, UICtrl) {
 
       // 6. calculate and update the percentages
       updatePercentages();
+
+      UICtrl.ExCsvBtnStyleAdd();
     }
+
+    // change the export csv color to active color and cursor if there is data entered
+    // if () {
+
+    // };
   };
 
   // a private function that will pass in the event object of the eventlistener as the argument
@@ -395,6 +434,12 @@ let controller = (function(budgetCtrl, UICtrl) {
       updatePercentages();
 
     };
+
+    // remove export csv btn only when there's no data
+    let data = budgetCtrl.getData();
+    if (data.expense.length === 0 && data.income.length === 0) {
+      UICtrl.ExCsvBtnStyleReM();
+    }
   };
 
   // return an object with an init function that can invoke the setupEventlistener function outside of controller

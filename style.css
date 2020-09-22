@@ -176,6 +176,20 @@ body {
 
 .add__btn:focus { outline: none; }
 
+.add__excsv {
+  margin-left: 20px;
+  padding: 5px;
+  background: none;
+  outline: none;
+  border: 1px solid rgb(190, 190, 190);
+  border-radius: 0.5em;
+  font-size: 12px;
+  color: rgb(190, 190, 190);
+  /* cursor: pointer; */
+}
+
+/* .add__excsv:active { transform: translateY(2px); } */
+
 /***** LISTS *****/
 .container {
     width: 1000px;
