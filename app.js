@@ -174,8 +174,8 @@ const budgetController = (function () {
 
     getData: function() {
       return {
-        income: data.totals.inc,
-        expense: data.totals.exp
+        income: data.allItems.inc,
+        expense: data.allItems.exp
       }
     },
 
