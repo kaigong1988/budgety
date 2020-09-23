@@ -1,13 +1,15 @@
-let budgetController = (function () {
+const budgetController = (function () {
   // add function constructor to make expense and income prototype classes:
-  var Expense = function (id, description, value) {
+  const Expense = function (id, description, value) {
     this.id = id;
+    this.type = 'expense';
     this.description = description;
     this.value = value;
     this.percentage = -1;
   };
-  var Income = function (id, description, value) {
+  const Income = function (id, description, value) {
     this.id = id;
+    this.type = 'income';
     this.description = description;
     this.value = value;
   };
@@ -28,15 +30,15 @@ let budgetController = (function () {
   }
 
   // create a private function to calculate the total income/expenses
-  var calculateTotal = function(type) {
-    var sum = 0;
+  const calculateTotal = function(type) {
+    let sum = 0;
     data.allItems[type].forEach(function(cur) {
       sum += cur.value;
     });
     data.totals[type] = sum;
   };
   // create a data structure of an object that stores all the data into arrays
-  var data = {
+  const data = {
     allItems: {
       exp: [],
       inc: []
@@ -47,6 +49,48 @@ let budgetController = (function () {
     },
     budget: 0,
     percentage: -1
+  };
+  // construct and design the csv file format and turning the input data into csv file
+  const objectToCsv = function(input) {
+    const csvRows = [];
+    // get the headers
+    const headers = Object.keys(input[0]).slice(1);
+    csvRows.push(headers.join(','));
+
+    // loop over the rows
+    for (const row of input) {
+      const values = headers.map(header => {
+
+        return row[header];
+      });
+      csvRows.push(values.join(','));
+    }
+    // get the footer
+    csvRows.push(`Available Budget, ${data.budget}`);
+    return csvRows.join('\n');
+  };
+
+  const displayFileName = function() {
+    var now, year, month, months, name;
+    now = new Date();
+    year = now.getFullYear();
+    months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    month = now.getMonth();
+    name = months[month] + ' ' + year + ' budgets';
+    return name;
+  }
+
+  const download = function(data) {
+    let fileName = displayFileName();
+    const blob = new Blob([data], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('hidden', '');
+    a.setAttribute('href', url);
+    a.setAttribute('download', `${fileName}.csv`);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   // return a public method
@@ -130,13 +174,19 @@ let budgetController = (function () {
 
     getData: function() {
       return {
-        expense: data.allItems.exp,
-        income: data.allItems.inc
+        income: data.totals.inc,
+        expense: data.totals.exp
       }
     },
 
-    exportData: function () {
-      console.log(data);
+    // getting exporting data and export as csv
+    exportData: function() {
+      const expData = [];
+      data.allItems.inc.forEach(cur => expData.push(cur));
+      data.allItems.exp.forEach(cur => expData.push(cur));
+      const csvData = objectToCsv(expData);
+      console.log(csvData);
+      download(csvData);
     }
   }
 
@@ -145,9 +195,9 @@ let budgetController = (function () {
 
 
 // UI CONTROLLER///////////////////////////////////////////////////////////////////
-let UIController = (function() {
+const UIController = (function() {
   // create DOMstrings object to point its value to the HTML/CSS class values incase of future changing of the HTML/CSS file (renaming the class names)
-  let DOMstrings = {
+  const DOMstrings = {
     inputType: '.add__type',
     inputDescription: '.add__description',
     inputValue: '.add__value',
@@ -164,7 +214,7 @@ let UIController = (function() {
     exCsvBtn: '.add__excsv'
   };
   // a function to formatting the numbers
-  var formatNumber = function(num, type) {
+  const formatNumber = function(num, type) {
     var numSplit, int, dec, commaInt;
     /*
     + or - sign before number
@@ -191,7 +241,7 @@ let UIController = (function() {
   };
 
   // field return a node list not an array so dont have higher order functions, so have create a primitive function "forEach" for the node list.
-  var nodeListForEach = function(list, callback) {
+  const nodeListForEach = function(list, callback) {
     for (let i = 0; i < list.length; i++) {
       callback(list[i], i);
     }
@@ -305,7 +355,7 @@ let UIController = (function() {
 
     // a function that changes exCsvBtn style
     ExCsvBtnStyleAdd: function() {
-      let exCsvbtn = document.querySelector(DOMstrings.exCsvBtn);
+      const exCsvbtn = document.querySelector(DOMstrings.exCsvBtn);
       exCsvbtn.style.color="#28B9B5";
       exCsvbtn.style.border="1px solid #28B9B5";
       exCsvbtn.style.cursor="pointer";
@@ -336,10 +386,10 @@ let UIController = (function() {
 
 
 //GLOBAL APP CONTROLLER////////////////////////////////////////////////////////////
-let controller = (function(budgetCtrl, UICtrl) {
+const controller = (function(budgetCtrl, UICtrl) {
   // set up an eventlistener function to organize all the eventlisters into one function
-  var setupEventlisteners = function () {
-    var DOM = UICtrl.getDOMstrings();
+  const setupEventlisteners = function () {
+    const DOM = UICtrl.getDOMstrings();
 
     // add eventhandler to collect the data from UICtrl(call ctrlAddItem function) once 'add button' is clicked
     document.querySelector(DOM.inputBtn).addEventListener('click', ctrlAddItem);
@@ -359,28 +409,28 @@ let controller = (function(budgetCtrl, UICtrl) {
   };
 
   // create a function to update the new current budget once add/delete an item
-  var updateBudget = function () {
+  const updateBudget = function () {
 
     // 1. Calculate the total income and expenses
     budgetCtrl.calculateBudget();
 
     // 2. Return the budget
-    var budget = budgetCtrl.getBudget();
+    const budget = budgetCtrl.getBudget();
     // 3. Display the budget on the UI
     UICtrl.displayBudget(budget);
 
   };
 
-  var updatePercentages = function() {
+  const updatePercentages = function() {
     // 1. calculate the percentages
     budgetCtrl.calculatePercentages();
     // 2. get percentage from the budget controller
-    var percentages = budgetCtrl.getPercentages();
+    const percentages = budgetCtrl.getPercentages();
     // 3. update the UI with the new percentages
     UICtrl.displayPercentages(percentages);
   };
   // collecting the input data from UICtrl(UIController)
-  var ctrlAddItem = function () {
+  const ctrlAddItem = function () {
     var input, newItem;
 
     // 1. get the field input data
@@ -404,15 +454,10 @@ let controller = (function(budgetCtrl, UICtrl) {
 
       UICtrl.ExCsvBtnStyleAdd();
     }
-
-    // change the export csv color to active color and cursor if there is data entered
-    // if () {
-
-    // };
   };
 
   // a private function that will pass in the event object of the eventlistener as the argument
-  var ctrlDeleteItem = function(event) {
+  const ctrlDeleteItem = function(event) {
     var itemID, splitID, type, ID;
     // using DOM traversing to move up the DOM to get item id
     itemID = event.target.parentNode.parentNode.parentNode.parentNode.id;
@@ -436,7 +481,7 @@ let controller = (function(budgetCtrl, UICtrl) {
     };
 
     // remove export csv btn only when there's no data
-    let data = budgetCtrl.getData();
+    const data = budgetCtrl.getData();
     if (data.expense.length === 0 && data.income.length === 0) {
       UICtrl.ExCsvBtnStyleReM();
     }
