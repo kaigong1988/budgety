@@ -1,4 +1,4 @@
-# budgety-practise
+# budgety
 
 An single page app that allows users to input monthly incomes and expenses to calculate their monthly budget.
 
