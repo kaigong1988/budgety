@@ -1,5 +1,16 @@
 {
+  "name": "budgety",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
   "dependencies": {
+    "express": "^4.17.1",
     "node-static": "^0.7.11"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7"
   }
 }

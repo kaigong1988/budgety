@@ -1,11 +1,9 @@
-var static = require('node-static');
-var file = new static.Server();
-require('http')
-  .createServer(function (request, response) {
-    request
-      .addListener('end', function () {
-        file.serve(request, response);
-      })
-      .resume();
-  })
-  .listen(process.env.PORT || 3000);
+const express = require('express');
+const app = express();
+const path = require('path');
+
+const port = 3000;
+
+app.use('/', express.static(path.join(__dirname, '')));
+
+app.listen(port, () => console.log(`Listening on port ${port}!`));
