@@ -1,7 +1,7 @@
 {
   "name": "budgety",
   "version": "1.0.0",
-  "description": "",
+  "description": "An single page app that allows users to input monthly incomes and expenses to calculate their monthly budget.",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
@@ -12,5 +12,15 @@
   },
   "devDependencies": {
     "nodemon": "^2.0.7"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kaigong1988/budgety-practise.git"
+  },
+  "author": "Kai",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kaigong1988/budgety-practise/issues"
+  },
+  "homepage": "https://github.com/kaigong1988/budgety-practise#readme"
 }
